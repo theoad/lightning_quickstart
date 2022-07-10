@@ -1,89 +1,182 @@
-### Deep learning project seed
-Use this seed to start new deep learning / ML projects.
-
-- Built in setup.py
-- Built in requirements
-- Examples with MNIST
-- Badges
-- Bibtex
-
-#### Goals  
-The goal of this seed is to structure ML paper-code the same so that work can easily be extended and replicated.   
-
-### DELETE EVERYTHING ABOVE FOR YOUR PROJECT  
- 
----
-
 <div align="center">    
  
-# Your Project Name     
+# Quickstart
 
-[![Paper](http://img.shields.io/badge/paper-arxiv.1001.2234-B31B1B.svg)](https://www.nature.com/articles/nature14539)
-[![Conference](http://img.shields.io/badge/NeurIPS-2019-4b44ce.svg)](https://papers.nips.cc/book/advances-in-neural-information-processing-systems-31-2018)
-[![Conference](http://img.shields.io/badge/ICLR-2019-4b44ce.svg)](https://papers.nips.cc/book/advances-in-neural-information-processing-systems-31-2018)
-[![Conference](http://img.shields.io/badge/AnyConference-year-4b44ce.svg)](https://papers.nips.cc/book/advances-in-neural-information-processing-systems-31-2018)  
-<!--
-ARXIV   
-[![Paper](http://img.shields.io/badge/arxiv-math.co:1480.1111-B31B1B.svg)](https://www.nature.com/articles/nature14539)
--->
-![CI testing](https://github.com/PyTorchLightning/deep-learning-project-template/workflows/CI%20testing/badge.svg?branch=master&event=push)
-
-
-<!--  
-Conference   
--->   
 </div>
- 
-## Description   
-What it does   
 
-## How to run   
-First, install dependencies   
+## Installation 
+First, install dependencies
 ```bash
-# clone project   
-git clone https://github.com/YourGithubName/deep-learning-project-template
+# You'll need pytorch 1.8 or newer.
+# Visit https://pytorch.org/ to get the relevant installation command. I used:
+pip install torch==1.8.0+cu111 torchvision==0.9.0+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
 
-# install project   
-cd deep-learning-project-template 
-pip install -e .   
-pip install -r requirements.txt
+# Install the module
+pip install git+https://github.com/theoad/quickstart
  ```   
- Next, navigate to any file and run it.   
- ```bash
-# module folder
-cd project
 
-# run module (example: mnist as your main contribution)   
-python lit_classifier_main.py    
-```
-
-## Imports
-This project is setup as a package which means you can now easily import any file into any other file like so:
+## Usage
+### Inherit from BaseModule and quickly create a powerful module.
 ```python
-from project.datasets.mnist import mnist
-from project.lit_classifier_main import LitClassifier
-from pytorch_lightning import Trainer
+import torch
+import torch.nn.functional as F
+import pytorch_lightning as pl
+from pytorch_lightning import loggers as pl_loggers
+from torchmetrics.classification.accuracy import Accuracy
 
-# model
-model = LitClassifier()
+from quickstart.modules import BaseModule
+from quickstart.nets.mlp import MLP
+from quickstart.data.mnist import MNISTDatamodule
 
-# data
-train, val, test = mnist()
 
-# train
-trainer = Trainer()
-trainer.fit(model, train, val)
+class Classification(BaseModule):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.loss = self.cross_entropy  # TODO: Assign here the loss function
 
-# test using the best model!
-trainer.test(test_dataloaders=test)
+    # TODO: Change project name and hparams to display in the name of the run
+    project_name = 'mnist_classification'
+    run_hparam_disp = ['learning_rate', 'hidden_size']
+    datamodule_cls = MNISTDatamodule  # TODO: Define here on which data to train/test
+
+    @staticmethod
+    def add_model_specific_args(parent_parser):
+        # Every argument added here is automatically accessible through self.hparam !
+        parent_parser = BaseModule.add_model_specific_args(parent_parser)
+        parser = parent_parser.add_argument_group("Model")
+        parser.add_argument("--img_size", type=int, nargs="*", default=[1, 32, 32])
+        parser.add_argument("--hidden_size", type=int, default=1024)
+        parser.add_argument("--num_classes", type=int, default=10)
+        parser.add_argument("--num_layers", type=int, default=3)
+        return parent_parser
+
+    def batch_preprocess(self, batch):
+        # This method should return a dictionary with at least 'samples' and 'targets'
+        samples, target = batch
+        return {'samples': samples, 'targets': target}
+
+    def cross_entropy(self, batch, batch_idx):
+        samples, target = batch['samples'], batch['targets']
+        preds = self(samples)
+        loss = F.cross_entropy(preds, target, reduction='mean')
+        logs = self.train_metrics(preds, target)
+        logs['cross_entropy'] = loss.item()
+        return loss, logs
+
+    def forward(self, samples):
+        return self.model(samples)
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.model.parameters(), lr=self.hparams.learning_rate)
+
+    def _init_modules(self):
+        # TODO: Add other models, preprocessing and so on
+        self.model = MLP(
+            self.hparams.img_size,
+            self.hparams.num_classes,
+            self.hparams.hidden_size,
+            self.hparams.num_layers,
+        )
+
+    def _init_metrics(self):
+        # TODO: Add other metrics (see quickstart.modules.classification_example.py)
+        return Accuracy(num_classes=self.hparams.num_classes)
+
+    @classmethod
+    def _init_logger(cls, args):
+        # TODO: Replace with the logger of your heart (any logger supported by lightning)
+        return pl_loggers.WandbLogger(
+            name=args.run_name,
+            project=args.proj_name,
+            entity='your-team-name'
+        )
+
+    @classmethod
+    def _init_callbacks(cls, args):
+        # TODO: Add your callbacks here
+        return [
+            pl.callbacks.ModelCheckpoint(
+                dirpath=f'checkpoints/{args.run_name}',
+                filename='{epoch}-{val_accuracy:.3f}',
+                monitor='val_accuracy',
+                save_top_k=5,
+                save_last=True,
+                mode='max'
+            ),
+        ]
+
+
+if __name__ == "__main__":
+    Classification.train_routine()
 ```
 
-### Citation   
+### Train
+```bash
+# Single GPU
+python classification.py --gpus 1 --hidden_size 128 --num_layers 5
+
+# Multi GPU
+python classification.py --gpus 8 --hidden_size 128 --num_layers 5
+
+# Debug
+python classification.py --gpus 1 --fast_dev_run
+
+# Help
+python classification.py --help
 ```
-@article{YourName,
-  title={Your Title},
-  author={Your team},
-  journal={Location},
-  year={Year}
-}
-```   
+
+### Test
+```bash
+python classification.py --gpus 1 --test --checkpoint mnist_classification/2mwq89zf/checkpoints/last.ckpt
+```
+
+### Inference
+```python
+import torch
+from quickstart.nets.mlp import MLP
+
+checkpoint = torch.load("mnist_classification/2mwq89zf/checkpoints/last.ckpt")
+hyper_parameters = checkpoint["hyper_parameters"]
+model_weights = checkpoint["state_dict"]
+
+# MLP is a simple nn.Module !
+model = MLP(**hyper_parameters)
+
+# update keys by dropping `model` (in Classification kept the MLP in the field self.model).
+for key in list(model_weights):
+    model_weights[key.replace("model.", "")] = model_weights.pop(key)
+
+model.load_state_dict(model_weights)
+model.eval()
+x = torch.randn(1, 1, 32, 32)
+
+with torch.no_grad():
+    y_hat = model(x)
+```
+
+### Reuse weights
+```python
+from quickstart.modules import BaseModule
+from quickstart.nets.mlp import MLP
+
+class ModelReuse(BaseModule):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    # ...
+
+    def _init_modules(self):
+        self.model = MLP(
+            self.hparams.img_size,
+            self.hparams.num_classes,
+            self.hparams.hidden_size,
+            self.hparams.num_layers,
+        )
+        self.cnn_backbone = ... # Another architecture
+    # ...
+```
+```bash
+# Will automatically initialize the weights of the MLP in self.model with the checkpoint
+python model_reuse.py --gpus 1 --checkpoint mnist_classification/2mwq89zf/checkpoints/last.ckpt
+```
+

@@ -86,7 +86,7 @@ class Classification(modules.BaseModule):
     def _init_callbacks(cls, args):
         return [
             pl.callbacks.ModelCheckpoint(
-                dirpath='checkpoints',
+                dirpath=None,
                 filename='{epoch}-{val_accuracy:.3f}',
                 monitor='val_accuracy',
                 save_top_k=5,
