@@ -1,15 +1,13 @@
-import os
-
 import modules
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
-import data.mnist
+from nets.mlp import MLP
+from data.mnist import MNISTDatamodule
 import torch.nn.functional as F
 from torchmetrics import MetricCollection
 from torchmetrics.classification.accuracy import Accuracy
 from torchmetrics.classification.precision_recall import Precision, Recall
-from nets.mlp import MLP
 
 
 class Classification(modules.BaseModule):
@@ -19,7 +17,7 @@ class Classification(modules.BaseModule):
 
     project_name = 'mnist_classification'
     run_hparam_disp = ['learning_rate', 'hidden_size']
-    datamodule_cls = data.mnist.MNISTDatamodule
+    datamodule_cls = MNISTDatamodule
 
     @staticmethod
     def add_model_specific_args(parent_parser):
