@@ -43,7 +43,7 @@ class BaseModule(pl.LightningModule, ABC):
     .. _TheoA: https://github.com/theoad
     """
 
-    project_name = ...  # assign project name ex: 'quickstart'
+    project_name = ...  # assign project name ex: 'lightning_quick'
     run_hparam_disp = ...  # add list of hyper-params to display in run names ex: ['learning_rate', 'hidden_size']
     datamodule_cls = ...  # assign a datamodule class (yes, the class itself, not some instantiated object)
 

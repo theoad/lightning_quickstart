@@ -8,7 +8,7 @@ with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
 setup(
-    name='quickstart',
+    name='lightning_quick',
     version='0.0.1',
     description='pytorch-lightning based template to quickly implement new ideas',
     author='Theo J. Adrai',

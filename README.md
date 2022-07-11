@@ -1,6 +1,6 @@
 <div align="center">    
  
-# Quickstart
+# Lightning Quick
 
 </div>
 
@@ -12,7 +12,7 @@ First, install dependencies
 pip install torch==1.8.0+cu111 torchvision==0.9.0+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
 
 # Install the module
-pip install git+https://github.com/theoad/quickstart
+pip install git+https://github.com/theoad/lightning_quick
  ```   
 
 ## Usage
@@ -24,9 +24,9 @@ import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from torchmetrics.classification.accuracy import Accuracy
 
-from quickstart.modules import BaseModule
-from quickstart.nets.mlp import MLP
-from quickstart.data.mnist import MNISTDatamodule
+from lightning_quick.modules import BaseModule
+from lightning_quick.nets.mlp import MLP
+from lightning_quick.data.mnist import MNISTDatamodule
 
 
 class Classification(BaseModule):
@@ -79,7 +79,7 @@ class Classification(BaseModule):
         )
 
     def _init_metrics(self):
-        # TODO: Add other metrics (see quickstart.modules.classification_example.py)
+        # TODO: Add other metrics (see lightning_quick.modules.classification_example.py)
         return Accuracy(num_classes=self.hparams.num_classes)
 
     @classmethod
@@ -133,7 +133,7 @@ python classification.py --gpus 1 --test --checkpoint mnist_classification/2mwq8
 ### Inference
 ```python
 import torch
-from quickstart.nets.mlp import MLP
+from lightning_quick.nets.mlp import MLP
 
 checkpoint = torch.load("mnist_classification/2mwq89zf/checkpoints/last.ckpt")
 hyper_parameters = checkpoint["hyper_parameters"]
@@ -156,8 +156,8 @@ with torch.no_grad():
 
 ### Reuse weights
 ```python
-from quickstart.modules import BaseModule
-from quickstart.nets.mlp import MLP
+from lightning_quick.modules import BaseModule
+from lightning_quick.nets.mlp import MLP
 
 class ModelReuse(BaseModule):
     def __init__(self, **kwargs):
