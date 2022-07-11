@@ -1,16 +1,16 @@
-import modules
+from lightning_quick.modules import BaseModule
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
-from nets.mlp import MLP
-from data.mnist import MNISTDatamodule
+from lightning_quick.nets.mlp import MLP
+from lightning_quick.data.mnist import MNISTDatamodule
 import torch.nn.functional as F
 from torchmetrics import MetricCollection
 from torchmetrics.classification.accuracy import Accuracy
 from torchmetrics.classification.precision_recall import Precision, Recall
 
 
-class Classification(modules.BaseModule):
+class Classification(BaseModule):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.loss = self.cross_entropy
@@ -21,13 +21,14 @@ class Classification(modules.BaseModule):
 
     @staticmethod
     def add_model_specific_args(parent_parser):
-        parent_parser = modules.BaseModule.add_model_specific_args(parent_parser)
+        parent_parser = BaseModule.add_model_specific_args(parent_parser)
         parser = parent_parser.add_argument_group("Model")
+        parser.add_argument("--learning_rate", type=float, default=1e-3, help="learning rate")
+        parser.add_argument("--betas", type=int, nargs="*", default=[0.9, 0.999])
         parser.add_argument("--img_size", type=int, nargs="*", default=[1, 32, 32])
         parser.add_argument("--hidden_size", type=int, default=1024)
         parser.add_argument("--num_classes", type=int, default=10)
         parser.add_argument("--num_layers", type=int, default=3)
-        parser.add_argument("--betas", type=int, nargs="*", default=[0.9, 0.999])
         return parent_parser
 
     def batch_preprocess(self, batch):
@@ -103,7 +104,7 @@ class Classification(modules.BaseModule):
 
     @staticmethod
     def _trainer_kwargs():
-        kwargs = modules.BaseModule._trainer_kwargs()
+        kwargs = BaseModule._trainer_kwargs()
         kwargs['benchmark'] = True
         return kwargs
 

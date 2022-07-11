@@ -47,7 +47,7 @@ class BaseModule(pl.LightningModule, ABC):
     run_hparam_disp = ...  # add list of hyper-params to display in run names ex: ['learning_rate', 'hidden_size']
     datamodule_cls = ...  # assign a datamodule class (yes, the class itself, not some instantiated object)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         """
         DO Initialize here::
 
@@ -89,7 +89,6 @@ class BaseModule(pl.LightningModule, ABC):
             That's it ! No need to update `self.__init__()`, no need to set `self.hidden_size = hidden_size` and so on...
         """
         parser = parent_parser.add_argument_group("Run")
-        parser.add_argument("--learning_rate", type=float, default=1e-3, help="learning rate")
         parser.add_argument("--seed", type=int, default=42, help="Fixed seed for reproducibility")
         parser.add_argument("--test", action="store_true", default=False, help="Set this flag in order to skip training")
         parser.add_argument("-ckpt", "--checkpoint", type=str, default=None, help="path to pretrained model."

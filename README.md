@@ -30,8 +30,8 @@ from lightning_quick.data.mnist import MNISTDatamodule
 
 
 class Classification(BaseModule):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.loss = self.cross_entropy  # TODO: Assign here the loss function
 
     # TODO: Change project name and hparams to display in the name of the run
@@ -44,6 +44,7 @@ class Classification(BaseModule):
         # Every argument added here is automatically accessible through self.hparam !
         parent_parser = BaseModule.add_model_specific_args(parent_parser)
         parser = parent_parser.add_argument_group("Model")
+        parser.add_argument("--learning_rate", type=float, default=1e-3, help="learning rate")
         parser.add_argument("--img_size", type=int, nargs="*", default=[1, 32, 32])
         parser.add_argument("--hidden_size", type=int, default=1024)
         parser.add_argument("--num_classes", type=int, default=10)
